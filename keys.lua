@@ -1,9 +1,10 @@
 local M = {}
 local I = require 'emacs.interactive'
+local F = require 'emacs.find'
 
 function M.enable()
   keys['cu'] = I.numeric_prefix
-
+  keys['cmf'] = F.find_incremental
   keys['ct'] = {
     b = function() I.wrap(view.goto_buffer, view, I.BUFFERN) end,
     d = function() I.wrap(gui.print, "DEBUG: Count" , I.NUMBER) end,
