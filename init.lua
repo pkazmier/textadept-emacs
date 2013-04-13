@@ -1,7 +1,7 @@
 local M = {}
 
 M.interactive = require 'emacs.interactive'
-M.find = require 'emacs.find'
+M.editing = require 'emacs.editing'
 M.keys = require 'emacs.keys'
 
 return M

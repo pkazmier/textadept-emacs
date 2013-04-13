@@ -111,6 +111,27 @@ function I.select_buffer(prompt)
   return i and _BUFFERS[i+1] or nil
 end
 
+-- Returns an iterator that will iterate over a list starting with
+-- the offset specified which can be positive or negative.
+--
+-- for i in rotate({1,2,3},1) do print(i) end --> 2, 3, 1
+-- for i in rotate({1,2,3},2) do print(i) end --> 3, 1, 2
+-- for i in rotate({1,2,3},3) do print(i) end --> 1, 2, 3
+-- for i in rotate({1,2,3},-1) do print(i) end --> 3, 1, 2
+-- for i in rotate({1,2,3},-2) do print(i) end --> 2, 3, 1
+-- for i in rotate({1,2,3},-3) do print(i) end --> 1, 2, 3
+--
+function rotate(t, offset)
+  local len = #t
+  offset = offset % len
+  local idx, cnt = offset, 0
+  return function()
+    local cur = idx
+    cnt, idx = cnt+1, (idx+1) % len
+    return cnt <= len and t[cur+1] or nil
+  end
+end
+
 
 -- -------------------------------------------------------------------
 -- Emacs Interactive Implementation
@@ -127,7 +148,9 @@ end
 
 -- I.BUFFER is replaced with a buffer reference selected by the
 -- user. The buffer is selected via a pop up dialog box.
-I.BUFFER = { I, function() I.select_buffer(I._BUFFER_PROMPT) end }
+I.BUFFER = { I, function()
+  return I.select_buffer(I._BUFFER_PROMPT)
+end }
 setmetatable(I.BUFFER, { __call = function(t, p)
   I._BUFFER_PROMPT = p
   return I.BUFFER
@@ -135,7 +158,7 @@ end })
 
 -- I.BUFFERN is replaced with the index of the buffer selected by the
 -- user. The buffer is selected via a pop up dialog box.
-I.BUFFERN = { I, function() 
+I.BUFFERN = { I, function()
   local b = I.select_buffer(I._BUFFER_PROMPT)
   return b and _BUFFERS[b] or nil
 end }
@@ -154,7 +177,7 @@ I._BUFFER_PROMPT = 'Select Buffer:'
 -- using only key chaining.
 I.NUMBER = { I, function()
   local n = tonumber(I._NUMBER)
-  I._NUMBER = ''
+  I._NUMBER = ''  -- Must clear or subsequent cmds will reuse
   return n and n or 1
 end }
 
@@ -194,11 +217,11 @@ function I.wrap(f, ...)
         -- If the interactive function returns nothing, i.e. the user
         -- cancels a dialog box, then we return false so other lower
         -- priority bindings can have a crack at it.
-        return false 
-      end 
+        return false
+      end
     end
   end
-  f(table.unpack(args))  -- Execute the wrapped function 
+  f(table.unpack(args))  -- Execute the wrapped function
   return true
 end
 
@@ -219,6 +242,22 @@ function I.ntimes(f)
   end
 end
 
+-- An even more convenient function that returns a function that
+-- I.wraps the specified function and repeats it based on number
+-- of times specified with numeric prefix. This allows you to
+-- replace a key binding such as:
+--
+--   keys['cp'] = function() I.wrap(I.ntimes(buffer.line_up), I.NUMBER, buffer) end
+--
+-- With something like this:
+--
+--   keys['cp'] = I.repeatable(buffer.line_up, buffer)
+--
+function I.repeatable(f,...)
+  local args = table.pack(...)
+  return function() I.wrap(I.ntimes(f), I.NUMBER, table.unpack(args)) end
+end
+
 -- Simple helper function to wrap a function so it returns a new
 -- function that specifies as its first argument the buffer upon which
 -- to switch to before invoking the original function. Any number of
@@ -228,13 +267,26 @@ end
 --   local fn = with_buffer(buffer.close)
 --   fn(buffer)   --> invokes buffer.close on buffer which might
 --                    not be the active buffer
-function I.with_buffer(f)
+function I.with_buffer(f, n)
   return function(b,...)
-    local orig = buffer
-    view:goto_buffer(b)
-    f(...)
-    view:goto_buffer(_BUFFERS[orig])
+    if b == buffer then
+      f(...)
+    else
+      local orig = buffer
+      view:goto_buffer(_BUFFERS[b])
+      f(...)
+      view:goto_buffer(_BUFFERS[orig])
+    end
   end
+end
+
+function I.switch_buffer()
+  I.wrap(view.goto_buffer, view, I.BUFFERN)
+end
+
+function I.pick_buffer(prompt,f,...)
+  local args = table.pack(...)
+  return function() I.wrap(I.with_buffer(f), I.BUFFER(prompt), table.unpack(args)) end
 end
 
 -- -------------------------------------------------------------------

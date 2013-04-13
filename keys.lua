@@ -1,19 +1,68 @@
 local M = {}
+
+local E = require 'emacs.editing'
 local I = require 'emacs.interactive'
-local F = require 'emacs.find'
+
+function nothing() end
 
 function M.enable()
+  -- Incremental search keymap (you need recent version of textadept)
+  keys.find_incremental['cs'] = gui.find.find_incremental_next
+  keys.find_incremental['\n'] = function() gui.command_entry.finish_mode(nothing) end
+
+  -- Emacs-like key bindings
+  -- do not bind 'cl' (used by other modes), 'ct cl' will redraw
+  -- do not bind 'c ' (used for auto completion), set mark is 'cr'
+
+  keys['ca'] = buffer.vc_home
+  keys['ce'] = buffer.line_end
+  keys['m<'] = buffer.document_start
+  keys['m>'] = buffer.document_end
+
+  keys['cf'] = I.repeatable(buffer.char_right)
+  keys['cb'] = I.repeatable(buffer.char_left)
+  keys['mf'] = I.repeatable(buffer.word_right)
+  keys['mb'] = I.repeatable(buffer.word_left)
+
+  keys['cd'] = I.repeatable(buffer.clear)
+  keys['md'] = E.yank(I.repeatable(buffer.word_right))
+  keys['cmh'] = E.yank(I.repeatable(buffer.del_word_left)) -- not working
+
+  keys['ck'] = E.yank(E.line_end)
+
+  keys['cn'] = I.repeatable(buffer.line_down)
+  keys['cp'] = I.repeatable(buffer.line_up)
+
+  keys['cs'] = gui.find.find_incremental
+
+  keys['cv'] = buffer.page_down
+  keys['mv'] = buffer.page_up
+
   keys['cu'] = I.numeric_prefix
-  keys['cmf'] = F.find_incremental
+
+  keys['cr'] = E.set_mark
+  keys['cw'] = E.with_region(buffer.cut)
+  keys['mw'] = E.with_region(buffer.copy)
+  keys['cy'] = buffer.paste
+
+  keys['c_'] = I.repeatable(buffer.undo)
+
+  -- Custom key bindings can go here
   keys['ct'] = {
-    b = function() I.wrap(view.goto_buffer, view, I.BUFFERN) end,
-    d = function() I.wrap(gui.print, "DEBUG: Count" , I.NUMBER) end,
-    p = function() I.wrap(I.ntimes(buffer.line_up)  , I.NUMBER, buffer) end,
-    n = function() I.wrap(I.ntimes(buffer.line_down), I.NUMBER, buffer) end,
-    k = function() I.wrap(I.ntimes(buffer.line_delete), I.NUMBER, buffer) end,
-    s = function() I.wrap(buffer.search_next, 0, I.PROMPT('Search for:')) end,
-    x = function() I.wrap(I.with_buffer(buffer.close), I.BUFFERN) end,
+    cl = buffer.vertical_centre_caret,
   }
+
+  -- Emacs ctl-x key map
+  keys['cx'] = {
+    b = I.switch_buffer,
+    k = I.pick_buffer('Kill Buffer:', buffer.close),
+    cc = quit,
+    cf = io.open_file,
+    cr = io.open_recent_file,
+    cs = buffer.save,
+    cx = E.exchange_caret_and_mark,
+  }
+
 end
 
 return M
