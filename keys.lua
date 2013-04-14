@@ -49,6 +49,7 @@ function M.enable()
   keys['mw'] = E.with_region(E.copy)
   keys['cy'] = buffer.paste
 
+  keys['m '] = E.just_one_space
   keys['m|'] = {gui.command_entry.enter_mode, 'filter_through'}
 
   keys['c_'] = I.repeatable(buffer.undo)
