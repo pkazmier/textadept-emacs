@@ -16,8 +16,8 @@ function M.enable()
 
   keys['ca'] = buffer.vc_home
   keys['ce'] = buffer.line_end
-  keys['m<'] = buffer.document_start
-  keys['m>'] = buffer.document_end
+  keys['m<'] = function() E.save_mark(buffer.document_start) end
+  keys['m>'] = function() E.save_mark(buffer.document_end) end
 
   keys['cf'] = I.repeatable(buffer.char_right)
   keys['cb'] = I.repeatable(buffer.char_left)
@@ -25,10 +25,10 @@ function M.enable()
   keys['mb'] = I.repeatable(buffer.word_left)
 
   keys['cd'] = I.repeatable(buffer.clear)
-  keys['md'] = E.yank(I.repeatable(buffer.word_right))
-  keys['cmh'] = E.yank(I.repeatable(buffer.del_word_left)) -- not working
+  keys['md'] = E.move_cut(I.repeatable(buffer.word_right))
+  keys['cmh'] = E.move_cut(I.repeatable(buffer.del_word_left)) -- not working
 
-  keys['ck'] = E.yank(E.line_end)
+  keys['ck'] = E.move_cut(E.line_end)
 
   keys['cn'] = I.repeatable(buffer.line_down)
   keys['cp'] = I.repeatable(buffer.line_up)
@@ -41,8 +41,8 @@ function M.enable()
   keys['cu'] = I.numeric_prefix
 
   keys['cr'] = E.set_mark
-  keys['cw'] = E.with_region(buffer.cut)
-  keys['mw'] = E.with_region(buffer.copy)
+  keys['cw'] = E.with_region(E.cut)
+  keys['mw'] = E.with_region(E.copy)
   keys['cy'] = buffer.paste
 
   keys['c_'] = I.repeatable(buffer.undo)

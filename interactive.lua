@@ -203,7 +203,7 @@ I._PROMPT = 'Input:'
 -- collected. This allows one to bind non-interactive functions to key
 -- bindings.
 function I.wrap(f, ...)
-  local args = table.pack(...)
+  local args, newargs = table.pack(...), {}
   for i=1, args.n do
     local arg = args[i]
     -- We check to see if any of the arguments is one of our specially
@@ -212,16 +212,25 @@ function I.wrap(f, ...)
     -- guarantees that a user can pass any argument without worrying
     -- that we may inadvertantly treat it as one of our special args.
     if type(arg) == 'table' and arg[1] == I then
-      args[i] = arg[2]()  -- Invoke the fn in our special arg definition
-      if args[i] == nil then
+      local results = table.pack(arg[2]())
+      if results.n == 1 and results[1] == nil then
         -- If the interactive function returns nothing, i.e. the user
         -- cancels a dialog box, then we return false so other lower
         -- priority bindings can have a crack at it.
         return false
+      else
+        -- Multiple return values came back from our specially
+        -- defined argument so we will add each of these to
+        -- newargs
+        for j=1, results.n do newargs[#newargs+1] = results[j] end
       end
+    else
+      -- Argement was not one of the special interactive arguments
+      -- so simply copy it as is to newargs.
+      newargs[#newargs+1] = arg
     end
   end
-  f(table.unpack(args))  -- Execute the wrapped function
+  f(table.unpack(newargs))  -- Execute the wrapped function
   return true
 end
 
