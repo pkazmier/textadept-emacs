@@ -4,7 +4,11 @@
 programmers.  It has been written in C and [Lua][2] and is fully
 extensible.  This module currently addes a handful of Emacs features
 to TextAdept including the basic key bindings as well as interactive
-function support.  More features will be added over time.
+function support.
+
+**Note:** This module is no longer compatible with current versions of 
+textadept. The internal API has changed and I've switched to 
+VSCode for my primary editor. There will be no further updates.
 
 ## Installation
 
